@@ -22,9 +22,9 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
     float3 rayOrigin = make_float3(0.0f, 0.0f, 2.0f);
     float3 rayDir = normalize(make_float3(u * 0.5f, v * 0.5f, -1.0f));
 
-    const int maxSteps = 64;
-    const float stepSize = 0.02f;
-    const float extinction = 4.0f;
+    const int maxSteps = 128;
+    const float stepSize = 0.01f;
+    const float extinction = 5.0f;
 
     //light passing through the volume
     float transmittance = 1.0f;
