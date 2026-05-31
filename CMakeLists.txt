@@ -10,6 +10,7 @@ find_package(glm REQUIRED PATHS /usr/lib/cmake/glm)
 
 add_executable(volumetric
     src/main.cpp
+    src/NoiseKernel.cu
     src/TexturePipeline.cu
     src/RayMarcher.cu
 )

@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include "TexturePipeline.cuh"
+#include "NoiseKernel.cuh"
 #include <stdio.h>
 #include <iostream>
 
@@ -26,27 +27,44 @@ void initVolumeTexture(){
 
     //density
     int totalVoxels = VOLUME_WIDTH * VOLUME_HEIGHT * VOLUME_DEPTH;
-    float* h_volume = new float[totalVoxels];
-    for(int i = 0; i < totalVoxels; ++i){
-        h_volume[i] = 0.5f; //can be changed
+    float* d_volume = nullptr;
+    err = cudaMalloc(&d_volume, totalVoxels * sizeof(float));
+    if (err != cudaSuccess) {
+        std::cout << "Failed to allocate noise volume: " << cudaGetErrorString(err) << std::endl;
+        return;
     }
 
-    //data to array. sending h_volume to d_volumeArray
+    launchNoiseKernel(d_volume, VOLUME_WIDTH, VOLUME_HEIGHT, VOLUME_DEPTH, 0.0f);
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cout << "Failed to launch noise kernel: " << cudaGetErrorString(err) << std::endl;
+        cudaFree(d_volume);
+        return;
+    }
+
+    err = cudaDeviceSynchronize();
+    if (err != cudaSuccess) {
+        std::cout << "Failed to generate noise volume: " << cudaGetErrorString(err) << std::endl;
+        cudaFree(d_volume);
+        return;
+    }
+
+    //data to array. sending d_volume to d_volumeArray
     cudaMemcpy3DParms copyParams = {};
-    copyParams.srcPtr = make_cudaPitchedPtr(h_volume, VOLUME_WIDTH * sizeof(float), VOLUME_WIDTH, VOLUME_HEIGHT);
+    copyParams.srcPtr = make_cudaPitchedPtr(d_volume, VOLUME_WIDTH * sizeof(float), VOLUME_WIDTH, VOLUME_HEIGHT);
     copyParams.dstArray = d_volumeArray;
     copyParams.extent = volumeSize;
-    copyParams.kind = cudaMemcpyHostToDevice;
+    copyParams.kind = cudaMemcpyDeviceToDevice;
 
     //error check
     err = cudaMemcpy3D(&copyParams);
     if (err != cudaSuccess) {
         std::cout << "Failed to copy data to 3D array: " << cudaGetErrorString(err) << std::endl;
-        delete[] h_volume;
+        cudaFree(d_volume);
         return;
     }
     //we were able to pass the data to d_volumeArray so we can delete it
-    delete[] h_volume;
+    cudaFree(d_volume);
 
     //texture objext
     cudaResourceDesc resDesc = {};              //empty resource descriptor
