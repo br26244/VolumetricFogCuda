@@ -100,4 +100,22 @@ void freeVolumeTexture(){
     }
 }
 
+void updateVolumeTexture(float* d_density) {
+    cudaMemcpy3DParms copyParams = {};
+    copyParams.srcPtr = make_cudaPitchedPtr(
+        d_density,
+        VOLUME_WIDTH * sizeof(float),
+        VOLUME_WIDTH,
+        VOLUME_HEIGHT
+    );
+    copyParams.dstArray = d_volumeArray;
+    copyParams.extent   = make_cudaExtent(VOLUME_WIDTH, VOLUME_HEIGHT, VOLUME_DEPTH);
+    copyParams.kind     = cudaMemcpyDeviceToDevice;
+
+    cudaError_t err = cudaMemcpy3D(&copyParams);
+    if (err != cudaSuccess) {
+        printf("updateVolumeTexture failed: %s\n", cudaGetErrorString(err));
+    }
+}
+
 

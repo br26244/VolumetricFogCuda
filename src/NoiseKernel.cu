@@ -105,8 +105,14 @@ __global__ void generateNoiseKernel(float* volume, int width, int height, int de
     float cx = nx * 2.0f - 1.0f;
     float cy = ny * 2.0f - 1.0f;
     float cz = nz * 2.0f - 1.0f;
-    float radius = sqrtf(cx * cx + cy * cy + cz * cz);
-    float falloff = clamp01(1.15f - radius);
+
+    float horizDist = sqrtf(cx * cx + cz * cz);
+    float horizFalloff = clamp01(1.3f - horizDist);
+    
+    float heighFactor = clamp01((cy + 1.0f) * 0.5f);
+    float heightFalloff = powf(heighFactor, 1.5f);
+
+    float falloff = horizFalloff * heightFalloff;
 
     float density = clamp01((noise - 0.20f) * 2.2f) * falloff;
 

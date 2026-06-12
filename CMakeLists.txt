@@ -7,17 +7,24 @@ set(CMAKE_CUDA_STANDARD 17)
 find_package(CUDAToolkit REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm REQUIRED PATHS /usr/lib/cmake/glm)
+find_package(glfw3 REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(X11 REQUIRED)
 
 add_executable(volumetric
     src/main.cpp
     src/NoiseKernel.cu
     src/TexturePipeline.cu
     src/RayMarcher.cu
+    src/FluidSim.cu
 )
 
 target_link_libraries(volumetric
     CUDA::cudart
+    OpenGL::GL
     GLEW::GLEW
+    glfw
+    X11
     glm::glm
 )
 

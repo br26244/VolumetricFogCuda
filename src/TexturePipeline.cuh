@@ -11,5 +11,6 @@ extern cudaTextureObject_t volumeTex;
 
 void initVolumeTexture();
 void freeVolumeTexture();
+void updateVolumeTexture(float* d_density);
 
 #endif 
