@@ -49,7 +49,9 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
         float movingZ = tz; //animate the fog by moving the sampling position
         movingZ = movingZ - floorf(movingZ); //wrap around to create a looping animation
         float density = tex3D<float>(volTex, tx, ty, movingZ); 
-
+        if (density < 0.01f) {
+        continue;
+        }
         //in scattered light
         float sampleExtinction = density * extinction * stepSize;
 
@@ -61,7 +63,10 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
             VolumeLight light = getVolumeLight(lightIndex, time);
             float cosTheta = dot(rayDir, light.direction);
             float phase = phaseHG(cosTheta, PHASE_G);
-            float shadowT = shadowMarch(pos, light.direction, volTex, extinction, time);
+            float shadowT = 1.0f;
+            if (lightIndex == 0) {
+            shadowT = shadowMarch(pos, light.direction, volTex, extinction, time);
+            }
 
             scatterAmount = scatterAmount + light.color *
                 (light.intensity * shadowT * phase * sampleExtinction * transmittance);
