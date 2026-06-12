@@ -23,9 +23,6 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
     float3 rayOrigin = make_float3(0.0f, 0.0f, 2.0f);
     float3 rayDir = normalize(make_float3(u * 0.5f, v * 0.5f, -1.0f));
 
-    //sun dirr
-    float3 sunDir = normalize(make_float3(-0.5f, 0.8f, -0.3f));
-
     const int maxSteps = 500;
     const float stepSize = 0.008f;
     const float extinction = 5.0f;
@@ -35,10 +32,6 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
     float3 pos = rayOrigin;
 
     float3 inScattered = make_float3(0.0f, 0.0f, 0.0f);
-
-    //phase func
-    float cosTheta = dot(rayDir, sunDir);
-    float phase = phaseHG(cosTheta, PHASE_G);
 
     for(int i = 0; i < maxSteps; i++){
         pos.x += rayDir.x * stepSize;
@@ -57,18 +50,24 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
         movingZ = movingZ - floorf(movingZ); //wrap around to create a looping animation
         float density = tex3D<float>(volTex, tx, ty, movingZ); 
 
-        //shadow ray
-        float shadowT = shadowMarch(pos, sunDir, volTex, extinction, time);
-
         //in scattered light
         float sampleExtinction = density * extinction * stepSize;
-        float3 lightColor = make_float3(SUN_COLOR_R, SUN_COLOR_G, SUN_COLOR_B);
 
         float3 ambientColor = make_float3(0.6f, 0.6f, 0.65f); // neutral gray, slight blue
         float3 ambientAmount = ambientColor * (sampleExtinction * transmittance * transmittance); 
 
-        float3 scatterAmmount = lightColor * (SUN_INTENSITY * shadowT * phase * sampleExtinction * transmittance);
-        inScattered = inScattered + scatterAmmount + ambientAmount;
+        float3 scatterAmount = make_float3(0.0f, 0.0f, 0.0f);
+        for (int lightIndex = 0; lightIndex < NUM_VOLUME_LIGHTS; ++lightIndex) {
+            VolumeLight light = getVolumeLight(lightIndex, time);
+            float cosTheta = dot(rayDir, light.direction);
+            float phase = phaseHG(cosTheta, PHASE_G);
+            float shadowT = shadowMarch(pos, light.direction, volTex, extinction, time);
+
+            scatterAmount = scatterAmount + light.color *
+                (light.intensity * shadowT * phase * sampleExtinction * transmittance);
+        }
+
+        inScattered = inScattered + scatterAmount + ambientAmount;
 
 
         //beer lambert
@@ -83,9 +82,9 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
     float smoothT = transmittance * transmittance * (3.0f - 2.0f * transmittance); 
     float3 finalColor = inScattered + background * smoothT;
     //white fog
-
+    // pull the color towards white
     float gray = (finalColor.x + finalColor.y + finalColor.z) / 3.0f;
-    float desaturation = 0.4;
+    float desaturation = 0.4; // amount to pull the color towards white
 
     finalColor.x = finalColor.x * (1.0f - desaturation) + gray * desaturation;
     finalColor.y = finalColor.y * (1.0f - desaturation) + gray * desaturation;
