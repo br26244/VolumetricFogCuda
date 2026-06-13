@@ -9,7 +9,7 @@
 #include "MathHelpers.cuh"
 #include "Lighting.cuh"
 
-__global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextureObject_t volTex, float time){
+__global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextureObject_t volTex, float time, float cameraAngle){
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -20,9 +20,12 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
     float u = (x + 0.5f) / ((float)width) * 2.0f - 1.0f; 
     float v = (y + 0.5f) / ((float)height) * 2.0f - 1.0f;
 
-    float3 rayOrigin = make_float3(0.0f, 0.0f, 2.0f);
-    float3 rayDir = normalize(make_float3(u * 0.5f, v * 0.5f, -1.0f));
+    const float radius = 2.5f;
 
+    float3 rayOrigin = make_float3(sinf(cameraAngle) * radius, 0.0f, cosf(cameraAngle) * radius);
+    float3 localDir = normalize(make_float3(u * 0.5f, v * 0.5f, -1.0f));
+    float3 rayDir = normalize(make_float3(localDir.x * cosf(cameraAngle) + localDir.z * sinf(cameraAngle), localDir.y, -localDir.x * sinf(cameraAngle) + localDir.z * cosf(cameraAngle)));
+    rayDir = normalize(rayDir);
     const int maxSteps = 500;
     const float stepSize = 0.008f;
     const float extinction = 5.0f;
@@ -83,7 +86,7 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
     }
 
     //background color
-    float3 background = make_float3(0.0f, 0.0f, 0.0f);
+    float3 background = make_float3(1.0f, 0.50f, 0.0f);
     float smoothT = transmittance * transmittance * (3.0f - 2.0f * transmittance); 
     float3 finalColor = inScattered + background * smoothT;
     //white fog
@@ -100,11 +103,11 @@ __global__ void rayMarchKernel(uchar4* buffer, int width, int height, cudaTextur
     buffer[y * width + x] = make_uchar4(r, g, b, 255);
 }
 
-void launchRenderKernel(uchar4* buffer, int width, int height,  float time){
+void launchRenderKernel(uchar4* buffer, int width, int height,  float time, float cameraAngle){
     dim3 blockSize(16, 16);
     //15 offset for rounding up 
     dim3 gridSize((width + 15) / 16, (height + 15) / 16);
 
-    rayMarchKernel<<<gridSize, blockSize>>>(buffer, width, height, volumeTex, time);
+    rayMarchKernel<<<gridSize, blockSize>>>(buffer, width, height, volumeTex, time, cameraAngle);
 
 }

@@ -40,8 +40,9 @@ int main() {
         // Advect the density volume
         stepFluidSim(time, dt);
 
+        float cameraAngle = (2.0f * 3.14159265f * frame) / NUM_FRAMES;
         // Render current state
-        launchRenderKernel(d_buffer, width, height, time);
+        launchRenderKernel(d_buffer, width, height, time, cameraAngle);
         cudaDeviceSynchronize();
 
         cudaError_t err = cudaGetLastError();

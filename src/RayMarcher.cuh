@@ -5,6 +5,6 @@
 #include <cuda_runtime.h>
 
 //uchar4 is for rgb and a 
-void launchRenderKernel(uchar4* buffer, int width, int height, float time);
+void launchRenderKernel(uchar4* buffer, int width, int height, float time, float cameraAngle);
 
 #endif
