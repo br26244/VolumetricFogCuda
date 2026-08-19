@@ -7,6 +7,7 @@ animated basic fluid simulation, and colored lighting. Part of this project assi
 to also involve CUDA and parallel optimization. I involved CUDA’s api
 to highly optimize the rendering and simulation of this graphics project.
 
+<video src="out (3).mp4" controls width="100%"></video>
 
 #Requirement:
 --CUDA
