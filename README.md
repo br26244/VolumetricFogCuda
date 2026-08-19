@@ -1,10 +1,10 @@
 Volumetric fog is typically used in animation and video game development, as it provides real
 time light scattering and particle movement against animated models. In comparison to Depth-Based Fog,
 which modifies pixels in relation to their distance from the camera, volumetric fog is a true 3D effect that
-renders how light interacts with particles in real time. For our final project, we decided to make a
+renders how light interacts with particles in real time. This project is a
 volumetric fog renderer with implemented simulated light scattering, light extinction, shadow rays,
 animated basic fluid simulation, and colored lighting. Part of this project assignment's requirements was
-to also involve CUDA and parallel optimization. Therefore, for our final project, we involved CUDA’s api
+to also involve CUDA and parallel optimization. I involved CUDA’s api
 to highly optimize the rendering and simulation of this graphics project.
 
 
